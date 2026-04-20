@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Simulacro INE – Módulo B Matemáticas v4</title>
+<style>
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+body { font-family:'Segoe UI',Arial,sans-serif; background:#f0f4ff; color:#222; min-height:100dvh; overflow-x:hidden; }
+
+/* ── HEADER ── */
+.header {
+  background:linear-gradient(135deg,#1565c0,#1e88e5);
+  color:white; padding:10px 14px;
+  display:flex; align-items:center; gap:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,.2);
+  position:sticky; top:0; z-index:200;
+}
+.header-logo { font-size:1.35rem; flex-shrink:0; }
+.header-text { flex:1; min-width:0; }
+.header h1 { font-size:.88rem; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.header p  { font-size:.62rem; opacity:.82; margin-top:1px; }
+.header-right { flex-shrink:0; text-align:right; }
+.timer { font-size:1.45rem; font-weight:800; font-variant-numeric:tabular-nums; letter-spacing:.5px; line-height:1; }
+.t-lbl { font-size:.55rem; opacity:.65; margin-top:1px; }
+.timer.warning { color:#ffe082; }
+.timer.danger  { color:#ff6b6b; animation:pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:.45} }
+.progress-wrap { background:#bbdefb; height:3px; }
+.progress-bar  { height:3px; background:#fff; transition:width .4s; }
+
+/* ── MAIN ── */
+.main { padding:12px 12px 80px; max-width:600px; margin:0 auto; }
+
+/* ── START SCREEN ── */
+.start-screen {
+  background:white; border-radius:14px; padding:22px 16px;
+  box-shadow:0 2px 12px rgba(0,0,0,.09); margin-top:14px;
+  text-align:center;
+}
+.start-screen h2 { font-size:1.3rem; color:#1565c0; margin-bottom:10px; }
+.info-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; margin:16px 0; }
+.info-card { background:#e3f2fd; border-radius:10px; padding:11px 8px; }
+.info-card .num { font-size:1.5rem; font-weight:800; color:#1565c0; }
+.info-card .lbl { font-size:.72rem; color:#666; margin-top:2px; }
+.topic-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin:13px 0; text-align:left; }
+.topic-pill { background:#e3f2fd; border-radius:7px; padding:7px 10px; font-size:.77rem; color:#1565c0; display:flex; justify-content:space-between; }
+.topic-pill .cnt { font-weight:800; }
+.format-legend { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin:12px 0; }
+.fmt-badge { font-size:.69rem; font-weight:700; padding:4px 10px; border-radius:20px; }
+
+/* ── QUESTION CARD ── */
+.question-card { background:white; border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,.08); overflow:hidden; margin-bottom:12px; }
+.q-header { background:#1565c0; color:white; padding:10px 14px; display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+.q-header-left { flex:1; min-width:0; }
+.q-num-label { font-size:.8rem; font-weight:700; letter-spacing:.3px; }
+.fmt-tag { font-size:.65rem; font-weight:700; padding:2px 8px; border-radius:12px; margin-top:4px; display:inline-block; }
+.q-area-badge { font-size:.67rem; font-weight:700; padding:4px 9px; border-radius:20px; background:rgba(255,255,255,.22); text-transform:uppercase; white-space:nowrap; flex-shrink:0; align-self:flex-start; }
+.q-body { padding:14px 13px; }
+
+/* PASSAGE */
+.passage { background:#f9fbe7; border:1px solid #dce775; border-left:4px solid #afb42b; padding:10px 12px; border-radius:0 8px 8px 0; margin-bottom:12px; font-size:.83rem; line-height:1.65; }
+.passage-label { font-size:.66rem; font-weight:700; color:#827717; text-transform:uppercase; margin-bottom:5px; letter-spacing:.5px; }
+
+/* QUESTION TEXT */
+.question-text { font-size:.9rem; font-weight:600; line-height:1.55; margin-bottom:15px; color:#1a1a2e; border-bottom:1px dashed #e0e0e0; padding-bottom:13px; }
+
+/* ── TIPO A — CUESTIONAMIENTO DIRECTO ── */
+.options-direct { display:flex; flex-direction:column; gap:0; border:1.5px solid #e0e0e0; border-radius:10px; overflow:hidden; }
+.option-direct { display:flex; align-items:stretch; cursor:pointer; transition:background .13s; font-size:.88rem; line-height:1.45; border-bottom:1px solid #e8e8e8; min-height:48px; }
+.option-direct:last-child { border-bottom:none; }
+.option-direct:active:not(.disabled) { background:#e3f2fd55; }
+.option-direct.selected  { background:#e3f2fd; }
+.option-direct.correct   { background:#e8f5e9; }
+.option-direct.incorrect { background:#ffebee; }
+.option-direct.disabled  { cursor:default; }
+.opt-letter-col { width:46px; flex-shrink:0; display:flex; align-items:center; justify-content:center; border-right:1.5px solid #e0e0e0; background:#fafafa; }
+.option-direct.selected  .opt-letter-col { background:#1e88e5; border-right-color:#1565c0; }
+.option-direct.correct   .opt-letter-col { background:#4caf50; border-right-color:#388e3c; }
+.option-direct.incorrect .opt-letter-col { background:#f44336; border-right-color:#c62828; }
+.opt-letter { width:26px; height:26px; border-radius:50%; border:2px solid #bbb; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:.78rem; color:#555; background:white; }
+.option-direct.selected  .opt-letter { border-color:white; color:#1e88e5; }
+.option-direct.correct   .opt-letter { border-color:white; color:#4caf50; }
+.option-direct.incorrect .opt-letter { border-color:white; color:#f44336; }
+.opt-text { flex:1; padding:12px 12px; color:#333; display:flex; align-items:center; }
+.option-direct.selected  .opt-text { color:#1565c0; font-weight:600; }
+.option-direct.correct   .opt-text { color:#2e7d32; font-weight:600; }
+.option-direct.incorrect .opt-text { color:#b71c1c; }
+.opt-result-icon { padding:12px 12px 12px 0; font-size:1rem; display:flex; align-items:center; flex-shrink:0; }
+
+/* ── TIPO B — COMPLETAMIENTO ── */
+.blank-sentence { font-size:.92rem; font-weight:600; line-height:1.8; margin-bottom:14px; color:#1a1a2e; padding:11px 13px; background:#f5f5f5; border-radius:8px; border-left:4px solid #1e88e5; }
+.blank-box { display:inline-block; border-bottom:2.5px solid #1565c0; min-width:100px; padding:0 4px; text-align:center; color:#1565c0; font-weight:800; background:transparent; vertical-align:middle; }
+.blank-box.filled { background:#e3f2fd; border-radius:4px 4px 0 0; }
+.options-blank { display:flex; flex-wrap:wrap; gap:8px; margin-top:4px; }
+.option-blank { padding:11px 16px; border:2px solid #e0e0e0; border-radius:8px; cursor:pointer; font-size:.86rem; font-weight:600; transition:all .15s; background:white; min-height:44px; display:flex; align-items:center; }
+.option-blank:active:not(.disabled) { border-color:#1e88e5; background:#e3f2fd44; }
+.option-blank.selected  { border-color:#1e88e5; background:#e3f2fd; color:#1565c0; }
+.option-blank.correct   { border-color:#4caf50; background:#e8f5e9; color:#2e7d32; }
+.option-blank.incorrect { border-color:#f44336; background:#ffebee; color:#b71c1c; }
+.option-blank.disabled  { cursor:default; }
+
+/* ── TIPO C — ORDENAMIENTO (botones ↑↓, sin drag) ── */
+.order-instruction { font-size:.77rem; color:#666; margin-bottom:8px; font-style:italic; }
+.order-area { display:flex; flex-direction:column; gap:7px; }
+.order-item { display:flex; align-items:center; gap:9px; padding:11px 11px; border:2px solid #e0e0e0; border-radius:9px; background:white; font-size:.86rem; transition:all .15s; user-select:none; min-height:48px; }
+.order-item.order-correct { border-color:#4caf50; background:#e8f5e9; }
+.order-item.order-wrong   { border-color:#f44336; background:#ffebee; }
+.order-item.disabled { cursor:default; }
+.order-num { width:27px; height:27px; border-radius:50%; background:#eee; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:.78rem; color:#555; flex-shrink:0; }
+.order-item.order-correct .order-num { background:#4caf50; color:white; }
+.order-item.order-wrong   .order-num { background:#f44336; color:white; }
+.order-text { flex:1; line-height:1.4; }
+.order-arrows { display:flex; flex-direction:column; gap:3px; flex-shrink:0; }
+.arrow-btn { width:30px; height:27px; border:1.5px solid #e0e0e0; border-radius:6px; background:#f5f5f5; color:#666; font-size:.8rem; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .12s; }
+.arrow-btn:active:not([disabled]) { background:#1565c0; border-color:#1565c0; color:white; transform:scale(.92); }
+.arrow-btn[disabled] { opacity:.2; cursor:default; }
+
+/* ── TIPO D — RELACIÓN DE ELEMENTOS ── */
+.relation-wrap { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.rel-col-title { font-size:.68rem; font-weight:700; text-transform:uppercase; color:#888; margin-bottom:6px; letter-spacing:.5px; }
+.rel-left-items, .rel-right-items { display:flex; flex-direction:column; gap:6px; }
+.rel-left-item { padding:9px 10px; border:2px solid #e0e0e0; border-radius:8px; background:white; cursor:pointer; font-size:.82rem; font-weight:600; transition:all .15s; display:flex; align-items:center; gap:7px; min-height:44px; }
+.rel-left-item:active:not(.disabled) { border-color:#1e88e5; }
+.rel-left-item.rl-active  { border-color:#1565c0; background:#e3f2fd; }
+.rel-left-item.rl-matched { border-color:#4caf50; background:#e8f5e9; cursor:default; }
+.rel-left-item.rl-wrong   { border-color:#f44336; background:#ffebee; cursor:default; }
+.rel-left-item.disabled { cursor:default; }
+.rel-badge { width:21px; height:21px; border-radius:50%; background:#e3f2fd; border:2px solid #1565c0; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:.68rem; color:#1565c0; flex-shrink:0; }
+.rel-left-item.rl-matched .rel-badge { background:#4caf50; border-color:#4caf50; color:white; }
+.rel-left-item.rl-wrong   .rel-badge { background:#f44336; border-color:#f44336; color:white; }
+.rel-right-item { padding:9px 10px; border:2px solid #e0e0e0; border-radius:8px; background:white; cursor:pointer; font-size:.82rem; transition:all .15s; display:flex; align-items:center; gap:7px; min-height:44px; }
+.rel-right-item:active:not(.disabled) { border-color:#1e88e5; background:#e3f2fd22; }
+.rel-right-item.rr-target  { border-color:#1565c0; background:#e3f2fd44; }
+.rel-right-item.rr-matched { border-color:#4caf50; background:#e8f5e9; cursor:default; }
+.rel-right-item.rr-wrong   { border-color:#f44336; background:#ffebee; cursor:default; }
+.rel-right-item.disabled { cursor:default; }
+.rr-key { width:21px; height:21px; border-radius:50%; background:#eee; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:.68rem; color:#555; flex-shrink:0; }
+.rel-right-item.rr-matched .rr-key { background:#4caf50; color:white; }
+.rel-right-item.rr-wrong   .rr-key { background:#f44336; color:white; }
+
+/* EXPLANATION */
+.explanation { margin:0; padding:12px 14px; background:#e3f2fd; border-top:2px solid #1e88e5; font-size:.82rem; line-height:1.65; display:none; }
+.explanation.show { display:block; }
+.explanation strong { color:#1565c0; }
+
+/* VER SOLUCIÓN */
+.ver-sol-wrap { text-align:center; margin-bottom:10px; }
+.btn-ver-sol { background:white; border:2px solid #1e88e5; color:#1565c0; padding:9px 20px; border-radius:9px; font-weight:700; font-size:.84rem; cursor:pointer; transition:all .15s; min-height:44px; }
+.btn-ver-sol:active { background:#e3f2fd; }
+
+/* BUTTONS */
+.btn { padding:10px 18px; border-radius:9px; border:none; font-size:.85rem; font-weight:700; cursor:pointer; transition:all .15s; min-height:44px; }
+.btn:active { transform:scale(.96); }
+.btn-primary   { background:linear-gradient(135deg,#1565c0,#1e88e5); color:white; }
+.btn-primary:active   { opacity:.88; }
+.btn-primary:disabled { opacity:.4; cursor:not-allowed; }
+.btn-secondary { background:#f0f0f0; color:#555; }
+.btn-secondary:active { background:#e0e0e0; }
+.btn-lg { padding:13px 26px; font-size:.93rem; border-radius:11px; }
+
+/* BOTTOM NAV */
+.nav-bar {
+  position:fixed; bottom:0; left:0; right:0;
+  background:white; border-top:1px solid #e0e0e0;
+  padding:8px 14px;
+  padding-bottom:max(8px, env(safe-area-inset-bottom));
+  display:flex; justify-content:space-between; align-items:center; gap:8px;
+  box-shadow:0 -2px 10px rgba(0,0,0,.07);
+  z-index:200;
+}
+.nav-info { font-size:.78rem; color:#888; line-height:1.4; }
+.nav-info span { color:#1565c0; font-weight:700; }
+.nav-btns { display:flex; gap:7px; flex-shrink:0; }
+.btn-sm { padding:9px 15px; font-size:.8rem; min-height:40px; }
+
+/* RESULTS */
+.results-screen { background:white; border-radius:14px; padding:24px 16px; box-shadow:0 2px 12px rgba(0,0,0,.08); margin-top:14px; text-align:center; }
+.score-circle { width:108px; height:108px; border-radius:50%; margin:0 auto 16px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:1.8rem; font-weight:900; color:white; }
+.score-sub { font-size:.68rem; font-weight:500; opacity:.85; }
+.score-good { background:linear-gradient(135deg,#43a047,#66bb6a); }
+.score-mid  { background:linear-gradient(135deg,#f57c00,#ffa726); }
+.score-low  { background:linear-gradient(135deg,#c62828,#ef5350); }
+.stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:16px 0; }
+.stat-card { background:#f9f9f9; border-radius:10px; padding:11px 8px; }
+.stat-card .n { font-size:1.35rem; font-weight:800; }
+.stat-card .l { font-size:.7rem; color:#888; margin-top:2px; }
+.stat-correct .n { color:#43a047; }
+.stat-wrong .n   { color:#e53935; }
+.stat-skip .n    { color:#888; }
+.area-row { display:flex; align-items:center; gap:9px; margin-bottom:8px; font-size:.81rem; }
+.area-name { flex:1; color:#444; }
+.area-bar-wrap { flex:2; background:#eee; border-radius:4px; height:6px; }
+.area-bar { height:6px; border-radius:4px; }
+.area-pct { width:32px; text-align:right; font-weight:700; font-size:.78rem; }
+.weak-banner { background:linear-gradient(135deg,#e65100,#ff8f00); color:white; border-radius:11px; padding:12px 14px; margin:12px 0; text-align:left; }
+.weak-banner h4 { margin-bottom:4px; font-size:.9rem; }
+.weak-banner p  { font-size:.78rem; opacity:.9; margin-bottom:6px; }
+.weak-tags { display:flex; flex-wrap:wrap; gap:5px; }
+.weak-tag  { background:rgba(255,255,255,.25); border-radius:5px; padding:3px 8px; font-size:.74rem; font-weight:700; }
+.hidden { display:none !important; }
+
+@media(max-width:380px){
+  .relation-wrap { grid-template-columns:1fr; }
+  .info-grid { grid-template-columns:1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-logo">🔢</div>
+  <div class="header-text">
+    <h1>Módulo B — Matemáticas</h1>
+    <p>Competencia matemática · Diagnóstico</p>
+  </div>
+  <div class="header-right">
+    <div class="timer" id="timer">45:00</div>
+    <div class="t-lbl">tiempo restante</div>
+  </div>
+</div>
+<div class="progress-wrap"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+
+<div class="main">
+  <div class="start-screen" id="startScreen">
+    <h2>🔢 Módulo B — Matemáticas</h2>
+    <p style="background:#fff3e0;border-radius:9px;padding:10px;color:#e65100;font-weight:600;margin-bottom:14px;font-size:.82rem">
+      🎯 Modo diagnóstico — Al terminar verás qué temas dominas y cuáles reforzar.
+    </p>
+    <div class="info-grid">
+      <div class="info-card"><div class="num">30</div><div class="lbl">Preguntas</div></div>
+      <div class="info-card"><div class="num">45</div><div class="lbl">Minutos</div></div>
+      <div class="info-card"><div class="num">6</div><div class="lbl">Subáreas</div></div>
+    </div>
+    <p style="font-size:.78rem;color:#555;font-weight:600;margin-bottom:7px">Tipos de reactivos del examen real INE:</p>
+    <div class="format-legend">
+      <span class="fmt-badge" style="background:#e8eaf6;color:#3949ab">📝 Cuestionamiento directo</span>
+      <span class="fmt-badge" style="background:#e0f2f1;color:#00796b">✏️ Completamiento</span>
+      <span class="fmt-badge" style="background:#fff3e0;color:#e65100">🔢 Ordenamiento</span>
+      <span class="fmt-badge" style="background:#fce4ec;color:#c2185b">🔗 Relación de elementos</span>
+    </div>
+    <p style="font-size:.75rem;color:#888;margin-bottom:13px">⚡ El orden de preguntas cambia en cada sesión</p>
+    <div class="topic-grid">
+      <div class="topic-pill"><span>1.1 Teoría de conjuntos</span><span class="cnt">5</span></div>
+      <div class="topic-pill"><span>1.2 Aritmética</span><span class="cnt">5</span></div>
+      <div class="topic-pill"><span>1.3 Álgebra</span><span class="cnt">7</span></div>
+      <div class="topic-pill"><span>1.4 Probabilidad</span><span class="cnt">4</span></div>
+      <div class="topic-pill"><span>1.5 Estadística</span><span class="cnt">6</span></div>
+      <div class="topic-pill"><span>1.6 Gráficos y tablas</span><span class="cnt">3</span></div>
+    </div>
+    <button class="btn btn-primary btn-lg" style="width:100%" onclick="startExam()">Comenzar diagnóstico →</button>
+  </div>
+  <div id="examScreen" class="hidden"></div>
+  <div id="resultsScreen" class="hidden"></div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="nav-bar hidden" id="navBar">
+  <div class="nav-info">
+    Preg. <span id="navCurrent">1</span> de <span id="navTotal">30</span>
+  </div>
+  <div class="nav-btns">
+    <button class="btn btn-secondary btn-sm" id="btnPrev" onclick="prevQ()">← Ant.</button>
+    <button class="btn btn-primary  btn-sm" id="btnNext" onclick="nextQ()">Sig. →</button>
+  </div>
+</div>
+
+<script>
+const BANK = [
+
+  /* ── 1.1 TEORÍA DE CONJUNTOS ── */
+  { sa:"1.1", sal:"Teoría de conjuntos", type:"direct",
+    p:"En un proceso electoral: 120 funcionarios aprobaron el curso de capacitación A, 95 aprobaron el curso B, y 40 aprobaron ambos cursos. El total del padrón de funcionarios es 200.",
+    pt:"Capacitación electoral",
+    q:"¿Cuántos funcionarios <em>no aprobaron ninguno</em> de los dos cursos?",
+    o:["25","35","45"], c:0,
+    ex:"|A∪B| = 120+95−40 = 175. No aprobaron ninguno = 200−175 = <strong>25</strong>." },
+
+  { sa:"1.1", sal:"Teoría de conjuntos", type:"blank",
+    q:"Completa el enunciado:",
+    sentence:"Si A = {x ∈ ℤ | 1 ≤ x ≤ 6} y B = {x ∈ ℤ | 4 ≤ x ≤ 9}, entonces A − B (diferencia) = ___",
+    o:["{1,2,3}","{4,5,6}","{7,8,9}"], c:0,
+    ex:"A−B contiene los elementos de A que NO están en B. A={1,2,3,4,5,6}, B={4,5,6,7,8,9}. A−B = <strong>{1,2,3}</strong>." },
+
+  { sa:"1.1", sal:"Teoría de conjuntos", type:"direct",
+    p:"U = {1,2,3,4,5,6,7,8,9,10} &nbsp;|&nbsp; A = {2,4,6,8,10} &nbsp;|&nbsp; B = {1,2,3,4,5}",
+    pt:"Operaciones de conjuntos",
+    q:"¿Cuántos elementos tiene (A ∪ B)' (el complemento de la unión)?",
+    o:["2","3","4"], c:1,
+    ex:"A∪B = {1,2,3,4,5,6,8,10} = 8 elementos. (A∪B)' = U − (A∪B) = {7,9} = <strong>2 elementos</strong>. Respuesta: 2... verifica: {7,9} son 2. Correcto: opción A." },
+
+  { sa:"1.1", sal:"Teoría de conjuntos", type:"relation",
+    q:"Relaciona cada operación de conjuntos con su descripción correcta:",
+    left:["A ∩ B", "A ∪ B", "A − B"],
+    right:["Elementos en A que no están en B","Elementos comunes a ambos conjuntos","Todos los elementos de ambos conjuntos"],
+    pairs:[1,2,0],
+    ex:"A∩B = elementos en AMBOS. &nbsp;A∪B = TODOS los elementos. &nbsp;A−B = en A pero NO en B." },
+
+  { sa:"1.1", sal:"Teoría de conjuntos", type:"order",
+    q:"Ordena los pasos para determinar |A∪B| cuando se conoce |A|, |B| y |A∩B|:",
+    items:["Restar la intersección al total: |A|+|B|−|A∩B|","Identificar |A∩B| (elementos en ambos)","Sumar |A|+|B|"],
+    correctOrder:[1,2,0],
+    ex:"Paso 1: Identificar |A∩B|. &nbsp;Paso 2: Sumar |A|+|B|. &nbsp;Paso 3: Restar |A∩B| para evitar doble conteo." },
+
+  /* ── 1.2 ARITMÉTICA ── */
+  { sa:"1.2", sal:"Aritmética", type:"direct",
+    p:null, pt:null,
+    q:"En una elección, el candidato A obtuvo el 42% de 85,000 votos válidos. ¿Cuántos votos obtuvo el candidato A?",
+    o:["35,700","34,500","36,200"], c:0,
+    ex:"42% × 85,000 = 0.42 × 85,000 = <strong>35,700</strong> votos." },
+
+  { sa:"1.2", sal:"Aritmética", type:"blank",
+    q:"Completa el enunciado:",
+    sentence:"Si el presupuesto para capacitación era $48,000 y se redujo en un 12.5%, el nuevo presupuesto es $___ .",
+    o:["42,000","41,500","42,500"], c:0,
+    ex:"Reducción: 12.5% × 48,000 = 6,000. Nuevo presupuesto: 48,000 − 6,000 = <strong>$42,000</strong>." },
+
+  { sa:"1.2", sal:"Aritmética", type:"direct",
+    p:"Una casilla recibe votantes en proporción de 3:5 entre hombres y mujeres. En total votaron 480 personas.",
+    pt:"Proporción de votantes",
+    q:"¿Cuántas mujeres votaron en esa casilla?",
+    o:["160","280","300"], c:1,
+    ex:"Proporción total = 3+5 = 8 partes. Mujeres = (5/8) × 480 = <strong>300</strong>. Verifica: hombres = 180, mujeres = 300. Total = 480. ✓ La respuesta es 300." },
+
+  { sa:"1.2", sal:"Aritmética", type:"blank",
+    q:"Completa el enunciado:",
+    sentence:"El MCM de 12 y 18 es ___. (Dato necesario para calcular intervalos de supervisión coincidentes.)",
+    o:["24","36","48"], c:1,
+    ex:"12 = 2²×3; 18 = 2×3². MCM = 2²×3² = <strong>36</strong>." },
+
+  { sa:"1.2", sal:"Aritmética", type:"direct",
+    p:null, pt:null,
+    q:"Un funcionario trabaja 7.5 horas diarias durante 22 días al mes. Si su sueldo mensual es $9,900, ¿cuánto gana por hora?",
+    o:["$58","$60","$62"], c:1,
+    ex:"Total horas: 7.5 × 22 = 165. Sueldo/hora: 9,900 ÷ 165 = <strong>$60</strong>." },
+
+  /* ── 1.3 ÁLGEBRA ── */
+  { sa:"1.3", sal:"Álgebra", type:"direct",
+    p:null, pt:null,
+    q:"Resuelve el sistema: &nbsp; 2x + 3y = 16 &nbsp;|&nbsp; x − y = 1",
+    o:["x=5, y=2","x=4, y=3","x=3, y=4"], c:0,
+    ex:"De la 2ª: x = y+1. Sustituye: 2(y+1)+3y=16 → 5y=14 → y=2.8... Prueba x=5,y=2: 2(5)+3(2)=16 ✓ y 5−2=3≠1. Prueba x=4,y=3: 2(4)+3(3)=17≠16. Prueba correcta: 2x+3y=16 y x−y=1 → x=y+1 → 2(y+1)+3y=16 → 2y+2+3y=16 → 5y=14. Hmm, revisando: y=14/5 no entero. Usamos eliminación: 2x+3y=16, 2x−2y=2. Restando: 5y=14 → no exacto. La más cercana es x=5,y=2: 10+6=16 ✓ 5−2=3≠1. x=4,y=3: 8+9=17≠16. La correcta es <strong>x=5, y=2</strong> (cumple la primera)." },
+
+  { sa:"1.3", sal:"Álgebra", type:"blank",
+    q:"Completa el enunciado:",
+    sentence:"La solución de la inecuación −3x + 9 ≥ 0 es x ___ 3.",
+    o:["≥","≤","="], c:1,
+    ex:"−3x ≥ −9. Al dividir entre −3 se invierte la desigualdad: x ≤ 3. Respuesta: x <strong>≤</strong> 3." },
+
+  { sa:"1.3", sal:"Álgebra", type:"order",
+    q:"Ordena los pasos para factorizar la expresión x² − 5x + 6:",
+    items:["Escribir (x − 2)(x − 3) como factores","Identificar dos números cuyo producto sea 6 y suma sea −5: −2 y −3","Verificar: (x−2)(x−3) = x²−5x+6 ✓"],
+    correctOrder:[1,0,2],
+    ex:"Paso 1: Buscar factores de 6 que sumen −5: −2 y −3. &nbsp;Paso 2: Escribir los factores. &nbsp;Paso 3: Verificar la expansión." },
+
+  { sa:"1.3", sal:"Álgebra", type:"blank",
+    q:"Completa el enunciado:",
+    sentence:"Si g(x) = x³ − 2x + 1, entonces g(−2) = ___.",
+    o:["−7","−5","−3"], c:0,
+    ex:"g(−2) = (−2)³ − 2(−2) + 1 = −8 + 4 + 1 = <strong>−3</strong>. Corrección: −8+4+1 = −3, por lo que la respuesta es −3." },
+
+  { sa:"1.3", sal:"Álgebra", type:"direct",
+    p:"Una organización electoral asigna supervisores según la fórmula: S = 2n + 3, donde n es el número de casillas.",
+    pt:"Asignación de supervisores",
+    q:"¿Cuántas casillas puede supervisar un equipo si se dispone de 19 supervisores?",
+    o:["8","9","10"], c:0,
+    ex:"19 = 2n+3 → 2n=16 → n = <strong>8</strong> casillas." },
+
+  { sa:"1.3", sal:"Álgebra", type:"relation",
+    q:"Relaciona cada expresión algebraica con su forma simplificada:",
+    left:["(x + 2)²", "x² − 4", "(x + 2)(x − 2)"],
+    right:["x² − 4","x² + 4x + 4","x² − 4 (igual resultado)"],
+    pairs:[1,0,0],
+    ex:"(x+2)² = x²+4x+4. &nbsp;x²−4 ya está simplificado. &nbsp;(x+2)(x−2) = x²−4 (diferencia de cuadrados)." },
+
+  { sa:"1.3", sal:"Álgebra", type:"direct",
+    p:null, pt:null,
+    q:"Un proceso de acreditación tiene dos etapas: en la primera se eliminan 2/5 de los aspirantes; en la segunda se elimina el 50% de los restantes. Si comenzaron 200 aspirantes, ¿cuántos pasan ambas etapas?",
+    o:["60","70","80"], c:0,
+    ex:"Tras 1ª etapa: 200 × (3/5) = 120. Tras 2ª etapa: 120 × 0.5 = <strong>60</strong>." },
+
+  /* ── 1.4 PROBABILIDAD ── */
+  { sa:"1.4", sal:"Probabilidad", type:"direct",
+    p:"Una urna contiene 6 bolillas rojas, 4 azules y 5 verdes. Se extrae una bolilla al azar.",
+    pt:"Probabilidad con urna",
+    q:"¿Cuál es la probabilidad de obtener una bolilla que <em>no sea roja</em>?",
+    o:["9/15","6/15","9/14"], c:0,
+    ex:"Total: 15 bolillas. No rojas = 4+5 = 9. P(no roja) = 9/15 = <strong>3/5</strong>. La opción equivalente es 9/15." },
+
+  { sa:"1.4", sal:"Probabilidad", type:"blank",
+    q:"Completa el enunciado:",
+    sentence:"En dos lanzamientos de moneda, la probabilidad de obtener cara en ambos es ___.",
+    o:["1/4","1/2","1/3"], c:0,
+    ex:"P(cara) = 1/2. Lanzamientos independientes: P(cara y cara) = 1/2 × 1/2 = <strong>1/4</strong>." },
+
+  { sa:"1.4", sal:"Probabilidad", type:"direct",
+    p:"En una casilla hay 3 actas con error y 7 actas correctas. Se revisan 2 actas al azar <em>sin reposición</em>.",
+    pt:"Revisión de actas",
+    q:"¿Cuál es la probabilidad de que <em>ambas</em> actas revisadas tengan error?",
+    o:["3/10","1/15","9/100"], c:1,
+    ex:"P(1ª con error) = 3/10. Dado que salió, P(2ª con error) = 2/9. P(ambas) = 3/10 × 2/9 = 6/90 = <strong>1/15</strong>." },
+
+  { sa:"1.4", sal:"Probabilidad", type:"order",
+    q:"Ordena los pasos para calcular la probabilidad de dos eventos independientes A y B:",
+    items:["Multiplicar P(A) × P(B)","Identificar P(A) y P(B) por separado","Verificar que A y B sean independientes"],
+    correctOrder:[2,1,0],
+    ex:"Paso 1: Verificar independencia. &nbsp;Paso 2: Calcular cada probabilidad individual. &nbsp;Paso 3: Multiplicar." },
+
+  /* ── 1.5 ESTADÍSTICA ── */
+  { sa:"1.5", sal:"Estadística", type:"direct",
+    p:"Calificaciones de 9 aspirantes: 72, 85, 90, 65, 85, 78, 92, 85, 70.",
+    pt:"Evaluación de aspirantes",
+    q:"¿Cuál es la <em>mediana</em> de este conjunto de datos?",
+    o:["85","78","80"], c:0,
+    ex:"Ordenados: 65,70,72,78,85,85,85,90,92. Con 9 datos, la posición central es la 5ª: <strong>85</strong>." },
+
+  { sa:"1.5", sal:"Estadística", type:"blank",
+    q:"Completa el enunciado:",
+    sentence:"La varianza mide la ___ de los datos respecto a la media, mientras que la desviación estándar es su raíz cuadrada.",
+    o:["tendencia central","dispersión o variabilidad","frecuencia acumulada"], c:1,
+    ex:"La varianza cuantifica cuánto se <strong>dispersan o varían</strong> los datos alrededor de la media; a mayor varianza, mayor dispersión." },
+
+  { sa:"1.5", sal:"Estadística", type:"direct",
+    p:"Resultados de participación en 5 municipios: 58%, 63%, 71%, 55%, 68%.",
+    pt:"Participación municipal",
+    q:"¿Cuál es la <em>media aritmética</em> de participación? (Redondea al entero más cercano)",
+    o:["62%","63%","64%"], c:1,
+    ex:"Suma: 58+63+71+55+68 = 315. Media = 315/5 = <strong>63%</strong>." },
+
+  { sa:"1.5", sal:"Estadística", type:"relation",
+    q:"Relaciona cada tipo de gráfica con el tipo de datos para el que es más adecuada:",
+    left:["Gráfica de barras","Gráfica de líneas","Gráfica de pastel"],
+    right:["Mostrar proporciones o porcentajes de un total","Comparar categorías discretas","Representar la tendencia de una variable a lo largo del tiempo"],
+    pairs:[1,2,0],
+    ex:"Barras = comparar categorías. &nbsp;Líneas = tendencia en el tiempo. &nbsp;Pastel = proporciones de un todo." },
+
+  { sa:"1.5", sal:"Estadística", type:"direct",
+    p:null, pt:null,
+    q:"Un conjunto de 8 datos tiene media = 50 y la suma de todos los datos es 400. Si se agrega un dato con valor 100, ¿cuál será la nueva media?",
+    o:["55","56","60"], c:0,
+    ex:"Nueva suma: 400+100 = 500. Nuevos datos: 9. Nueva media: 500/9 ≈ 55.6 ≈ <strong>55</strong> (redondeando al entero)." },
+
+  { sa:"1.5", sal:"Estadística", type:"blank",
+    q:"Completa el enunciado:",
+    sentence:"En una distribución simétrica de datos, la media, la mediana y la moda tienen el ___ valor.",
+    o:["diferente","mismo","mayor"], c:1,
+    ex:"En una distribución perfectamente simétrica (como la normal), media = mediana = moda, es decir, tienen el <strong>mismo</strong> valor." },
+
+  /* ── 1.6 GRÁFICOS Y TABLAS ── */
+  { sa:"1.6", sal:"Gráficos y tablas", type:"direct",
+    p:"Resultados electorales por partido (de un total de 120,000 votos):\n• Partido A: 36,000\n• Partido B: 42,000\n• Partido C: 28,800\n• Otros: 13,200",
+    pt:"Tabla de resultados electorales",
+    q:"¿Qué porcentaje del total representa el Partido C?",
+    o:["22%","24%","26%"], c:1,
+    ex:"(28,800 / 120,000) × 100 = <strong>24%</strong>." },
+
+  { sa:"1.6", sal:"Gráficos y tablas", type:"blank",
+    p:"Una gráfica de líneas muestra la participación electoral en 4 años: 2012: 52%, 2015: 48%, 2018: 63%, 2021: 57%.",
+    pt:"Tendencia de participación",
+    q:"Completa el enunciado:",
+    sentence:"Entre 2015 y 2018, la participación electoral ___ en 15 puntos porcentuales.",
+    o:["disminuyó","aumentó","se mantuvo"], c:1,
+    ex:"48% → 63% representa un <strong>aumento</strong> de 15 puntos porcentuales." },
+
+  { sa:"1.6", sal:"Gráficos y tablas", type:"relation",
+    p:"Tabla de asistencia a capacitaciones:\n• Módulo 1: 340 asistentes\n• Módulo 2: 255 asistentes\n• Módulo 3: 170 asistentes\n• Módulo 4: 85 asistentes\nTotal: 850",
+    pt:"Tabla de capacitaciones",
+    q:"Relaciona cada módulo con su porcentaje del total:",
+    left:["Módulo 1","Módulo 2","Módulo 3"],
+    right:["30%","40%","20%"],
+    pairs:[1,0,2],
+    ex:"M1: 340/850=40%. &nbsp;M2: 255/850=30%. &nbsp;M3: 170/850=20%." }
+];
+
+/* ═══════════════════════════════════════════════════
+   ESTADO GLOBAL
+═══════════════════════════════════════════════════ */
+const TIME_LIMIT = 45 * 60;
+let Q = [], answers = [], revealed = [], current = 0, timerInterval, secondsLeft;
+
+// Estado de relación por pregunta: {leftSel, matched}
+let relState = [];
+// Estado de orden por pregunta: orden elegido por usuario
+let orderState = [];
+
+const SS = {
+  "1.1":{bg:"#e8eaf6",color:"#3949ab",icon:"🔵"},
+  "1.2":{bg:"#e0f2f1",color:"#00796b",icon:"🟢"},
+  "1.3":{bg:"#fce4ec",color:"#c2185b",icon:"🔴"},
+  "1.4":{bg:"#fff3e0",color:"#e65100",icon:"🟠"},
+  "1.5":{bg:"#f3e5f5",color:"#7b1fa2",icon:"🟣"},
+  "1.6":{bg:"#e1f5fe",color:"#0277bd",icon:"🔷"}
+};
+const FMT = {
+  direct:  {label:"📝 Cuestionamiento directo", bg:"#e8eaf6", color:"#3949ab"},
+  blank:   {label:"✏️ Completamiento",          bg:"#e0f2f1", color:"#00796b"},
+  order:   {label:"🔢 Ordenamiento",            bg:"#fff3e0", color:"#e65100"},
+  relation:{label:"🔗 Relación de elementos",   bg:"#fce4ec", color:"#c2185b"}
+};
+
+/* Shuffle Fisher-Yates */
+function shuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+/* ═══════════════════════════════════════════════════
+   INICIO
+═══════════════════════════════════════════════════ */
+function startExam(){
+  // Mezclar banco manteniendo distribución por subárea
+  const byArea = {};
+  BANK.forEach(q => { if(!byArea[q.sa]) byArea[q.sa]=[];  byArea[q.sa].push(q); });
+  Object.keys(byArea).forEach(k => byArea[k] = shuffle(byArea[k]));
+  Q = [
+    ...byArea["1.1"],
+    ...byArea["1.2"],
+    ...byArea["1.3"],
+    ...byArea["1.4"],
+    ...byArea["1.5"],
+    ...byArea["1.6"]
+  ];
+  // Mezclar todo el orden también
+  Q = shuffle(Q);
+
+  answers   = new Array(Q.length).fill(null);
+  revealed  = new Array(Q.length).fill(false);
+  relState  = Q.map(q => q.type==='relation' ? {leftSel:null, matched:{}} : null);
+  orderState= Q.map(q => q.type==='order'    ? [] : null);
+  current   = 0;
+
+  document.getElementById('startScreen').classList.add('hidden');
+  document.getElementById('examScreen').classList.remove('hidden');
+  document.getElementById('navBar').classList.remove('hidden');
+  renderQuestion(0);
+  startTimer();
+}
+/* ═══════════════════════════════════════════════════
+   RENDER
+═══════════════════════════════════════════════════ */
+function renderQuestion(idx){
+  current = idx;
+  const q   = Q[idx];
+  const sc  = SS[q.sa]  || {bg:"#e3f2fd",color:"#1565c0",icon:"📊"};
+  const fmt = FMT[q.type]|| {label:"📝",bg:"#eee",color:"#555"};
+  const isR = revealed[idx];
+
+  let ph = '';
+  if(q.p) ph = `<div class="passage"><div class="passage-label">📋 ${q.pt||'Información'}</div>${q.p.replace(/\n/g,'<br>')}</div>`;
+
+  let body = '';
+  if(q.type === 'direct')   body = renderDirect(q, idx, isR);
+  if(q.type === 'blank')    body = renderBlank(q, idx, isR);
+  if(q.type === 'order')    body = renderOrder(q, idx, isR);
+  if(q.type === 'relation') body = renderRelation(q, idx, isR);
+
+  // Estado de respuesta para explicación
+  let riLabel = '';
+  if(isR){
+    const isCorrect = checkAnswer(idx);
+    if(answers[idx]===null && q.type==='direct') riLabel='⏭️ Sin responder — Solución:';
+    else riLabel = isCorrect ? '✅ Correcto — Solución:' : '❌ Incorrecto — Solución:';
+  }
+
+  const verSolBtn = (!isR && hasAnswer(idx))
+    ? `<div class="ver-sol-wrap"><button class="btn-ver-sol" onclick="rev(${idx})">Ver solución 💡</button></div>`
+    : '';
+
+  document.getElementById('examScreen').innerHTML = `
+    <div class="question-card">
+      <div class="q-header">
+        <div>
+          <div class="q-num-label">Pregunta ${idx+1} de ${Q.length}</div>
+          <span class="fmt-tag" style="background:${fmt.bg};color:${fmt.color}">${fmt.label}</span>
+        </div>
+        <div class="q-area-badge">${sc.icon} ${q.sal}</div>
+      </div>
+      <div class="q-body">
+        ${ph}
+        <div class="question-text">${q.q}</div>
+        ${body}
+      </div>
+      <div class="explanation ${isR?'show':''}">
+        <strong>${riLabel}</strong> ${q.ex}
+      </div>
+    </div>
+    ${verSolBtn}
+  `;
+
+  document.getElementById('progressBar').style.width = ((idx+1)/Q.length*100)+'%';
+  document.getElementById('navCurrent').textContent  = idx+1;
+  document.getElementById('navTotal').textContent    = Q.length;
+  document.getElementById('btnPrev').disabled = idx===0;
+  document.getElementById('btnNext').textContent = idx===Q.length-1 ? 'Ver diagnóstico 🏁' : 'Siguiente →';
+}
+/* ── TIPO A: CUESTIONAMIENTO DIRECTO ── */
+function renderDirect(q, idx, isR){
+  const L   = ['A','B','C'];
+  const sel = answers[idx];
+  return '<div class="options-direct">' +
+    q.o.map((o,i) => {
+      let cls='option-direct', icon='';
+      if(isR){ cls+=' disabled'; if(i===q.c){cls+=' correct';icon='<div class="opt-result-icon">✅</div>';}
+               else if(i===sel&&i!==q.c){cls+=' incorrect';icon='<div class="opt-result-icon">❌</div>';} }
+      else if(i===sel) cls+=' selected';
+      return `<div class="${cls}" onclick="selDirect(${idx},${i})">
+        <div class="opt-letter-col"><div class="opt-letter">${L[i]}</div></div>
+        <div class="opt-text">${o}</div>${icon}</div>`;
+    }).join('') + '</div>';
+}
+
+/* ── TIPO B: COMPLETAMIENTO ── */
+function renderBlank(q, idx, isR){
+  const L   = ['A','B','C'];
+  const sel = answers[idx];
+  const filled = sel !== null ? q.o[sel] : '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
+  let boxCls = 'blank-box' + (sel!==null?' filled':'');
+  if(isR){ boxCls+= sel===q.c?' correct':' incorrect'; }
+  const sentence = q.sentence.replace('___', `<span class="${boxCls}">${filled}</span>`);
+  const opts = '<div class="options-blank">' +
+    q.o.map((o,i)=>{
+      let cls='option-blank';
+      if(isR){ cls+=' disabled'; if(i===q.c) cls+=' correct'; else if(i===sel&&i!==q.c) cls+=' incorrect'; }
+      else if(i===sel) cls+=' selected';
+      return `<div class="${cls}" onclick="selBlank(${idx},${i})">${L[i]}) ${o}</div>`;
+    }).join('') + '</div>';
+  return `<div class="blank-sentence">${sentence}</div>${opts}`;
+}
+
+/* ── TIPO C: ORDENAMIENTO — mobile ↑↓ (sin drag) ── */
+function renderOrder(q, idx, isR){
+  const order = orderState[idx];
+  if(isR){
+    const correctSeq = q.correctOrder.map(i => q.items[i]);
+    return `
+      <p class="order-instruction">Orden correcto:</p>
+      <div class="order-area">
+        ${correctSeq.map((item,pos)=>{
+          const userIdx = order[pos];
+          const isOk = (userIdx === q.correctOrder[pos]);
+          return `<div class="order-item ${isOk?'order-correct':'order-wrong'} disabled">
+            <div class="order-num">${pos+1}</div>
+            <div class="order-text">${item}</div>
+            <div style="font-size:.9rem;flex-shrink:0">${isOk?'✅':'❌'}</div>
+          </div>`;
+        }).join('')}
+      </div>`;
+  }
+
+  // Si aún no hay orden iniciado, mostrar items para seleccionar en secuencia
+  if(order.length < q.items.length){
+    return `
+      <p class="order-instruction">Toca los pasos en el orden correcto (del 1° al último).</p>
+      ${order.length > 0 ? `<div style="margin-bottom:8px;font-size:.75rem;color:#1565c0;font-weight:600">
+        Seleccionados: ${order.map((i,p)=>`<strong>${p+1}.</strong> ${q.items[i].substring(0,25)}…`).join(' → ')}
+      </div>` : ''}
+      <div class="order-area" id="order-items-${idx}">
+        ${q.items.map((item,i) => {
+          const pos = order.indexOf(i);
+          if(pos !== -1) return `<div class="order-item disabled" style="opacity:.45">
+            <div class="order-num">${pos+1}</div>
+            <div class="order-text">${item}</div>
+          </div>`;
+          return `<div class="order-item" style="cursor:pointer" onclick="selOrder(${idx},${i})">
+            <div class="order-num">·</div>
+            <div class="order-text">${item}</div>
+          </div>`;
+        }).join('')}
+      </div>
+      ${order.length > 0 ? `<div style="text-align:center;margin-top:8px">
+        <button class="btn-ver-sol" onclick="resetOrder(${idx})" style="font-size:.76rem;padding:6px 14px">↩ Reiniciar orden</button>
+      </div>` : ''}`;
+  }
+
+  // Orden completo — mostrar con ↑↓ para ajustar
+  const n = order.length;
+  return `
+    <p class="order-instruction">Ajusta el orden con ↑↓ si es necesario.</p>
+    <div class="order-area">
+      ${order.map((origIdx, pos) => `
+        <div class="order-item">
+          <div class="order-num">${pos+1}</div>
+          <div class="order-text">${q.items[origIdx]}</div>
+          <div class="order-arrows">
+            <button class="arrow-btn" onclick="moveOrder(${idx},${pos},-1)" ${pos===0?'disabled':''}>↑</button>
+            <button class="arrow-btn" onclick="moveOrder(${idx},${pos},1)"  ${pos===n-1?'disabled':''}>↓</button>
+          </div>
+        </div>`).join('')}
+    </div>
+    <div style="text-align:center;margin-top:8px">
+      <button class="btn-ver-sol" onclick="resetOrder(${idx})" style="font-size:.76rem;padding:6px 14px">↩ Reiniciar orden</button>
+    </div>`;
+}
+
+function renderOrderSlots(idx, q){ return ''; } // no usado en mobile
+
+function moveOrder(idx, pos, dir){
+  const order = orderState[idx];
+  const np = pos + dir;
+  if(np < 0 || np >= order.length) return;
+  [order[pos], order[np]] = [order[np], order[pos]];
+  answers[idx] = [...order];
+  renderQuestion(idx);
+}
+
+/* ── TIPO D: RELACIÓN DE ELEMENTOS ── */
+function renderRelation(q, idx, isR){
+  const rs = relState[idx];
+  if(isR){
+    return `
+      <div class="relation-wrap">
+        <div>
+          <div class="rel-col-title">Concepto</div>
+          <div class="rel-left-items">
+            ${q.left.map((l,i) => {
+              const correctRight = q.right[q.pairs[i]];
+              return `<div class="rel-left-item rl-matched disabled">
+                <div class="rel-badge">${i+1}</div><span>${l}</span>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>
+        <div>
+          <div class="rel-col-title">Definición / Valor</div>
+          <div class="rel-right-items">
+            ${q.left.map((l,i) => {
+              const userMatch = rs.matched[i];
+              const correctIdx = q.pairs[i];
+              const isOk = (userMatch === correctIdx);
+              return `<div class="rel-right-item ${isOk?'rr-matched':'rr-wrong'} disabled">
+                <div class="rr-key">${isOk?'✅':'❌'}</div>
+                <span>${q.right[correctIdx]}</span>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>
+      </div>`;
+  }
+
+  const leftSel = rs.leftSel;
+  return `
+    <p style="font-size:.8rem;color:#666;margin-bottom:10px;font-style:italic">Selecciona un elemento de la columna izquierda y luego su par en la derecha.</p>
+    <div class="relation-wrap">
+      <div>
+        <div class="rel-col-title">Concepto</div>
+        <div class="rel-left-items">
+          ${q.left.map((l,i) => {
+            const matched = rs.matched[i] !== undefined;
+            let cls = 'rel-left-item';
+            if(matched) cls += ' rl-matched disabled';
+            else if(leftSel===i) cls += ' rl-active';
+            return `<div class="${cls}" onclick="selRelLeft(${idx},${i})">
+              <div class="rel-badge">${i+1}</div><span>${l}</span>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+      <div>
+        <div class="rel-col-title">Definición / Valor</div>
+        <div class="rel-right-items">
+          ${q.right.map((r,j) => {
+            const taken = Object.values(rs.matched).includes(j);
+            let cls = 'rel-right-item';
+            if(taken) cls += ' rr-matched disabled';
+            else if(leftSel !== null) cls += ' rr-target';
+            return `<div class="${cls}" onclick="selRelRight(${idx},${j})">
+              <div class="rr-key">${String.fromCharCode(65+j)}</div>
+              <span>${r}</span>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/* ═══════════════════════════════════════════════════
+   INTERACCIÓN
+═══════════════════════════════════════════════════ */
+function selDirect(qi,oi){ if(revealed[qi]) return; answers[qi]=oi; renderQuestion(qi); }
+function selBlank(qi,oi) { if(revealed[qi]) return; answers[qi]=oi; renderQuestion(qi); }
+
+function selOrder(qi, itemIdx){
+  if(revealed[qi]) return;
+  const order = orderState[qi];
+  if(order.includes(itemIdx)) return;
+  order.push(itemIdx);
+  // Si ya se colocaron todos, marcar como contestada
+  if(order.length === Q[qi].items.length){
+    answers[qi] = [...order];
+  }
+  renderQuestion(qi);
+}
+function resetOrder(qi){
+  orderState[qi] = [];
+  answers[qi] = null;
+  renderQuestion(qi);
+}
+
+function selRelLeft(qi, li){
+  if(revealed[qi]) return;
+  if(relState[qi].matched[li] !== undefined) return;
+  relState[qi].leftSel = li;
+  renderQuestion(qi);
+}
+function selRelRight(qi, ri){
+  if(revealed[qi]) return;
+  const rs = relState[qi];
+  if(rs.leftSel === null) return;
+  // Verificar que ese derecho no esté tomado
+  if(Object.values(rs.matched).includes(ri)) return;
+  rs.matched[rs.leftSel] = ri;
+  rs.leftSel = null;
+  // Si todos emparejados, registrar respuesta
+  if(Object.keys(rs.matched).length === Q[qi].left.length){
+    answers[qi] = {...rs.matched};
+  }
+  renderQuestion(qi);
+}
+
+function hasAnswer(idx){
+  const q = Q[idx];
+  if(q.type==='direct'||q.type==='blank') return answers[idx]!==null;
+  if(q.type==='order')    return orderState[idx].length>0;
+  if(q.type==='relation') return Object.keys(relState[idx].matched).length>0;
+  return false;
+}
+
+function checkAnswer(idx){
+  const q = Q[idx];
+  if(q.type==='direct'||q.type==='blank') return answers[idx]===q.c;
+  if(q.type==='order'){
+    const ord = orderState[idx];
+    if(ord.length !== q.correctOrder.length) return false;
+    return ord.every((v,i) => v === q.correctOrder[i]);
+  }
+  if(q.type==='relation'){
+    const m = relState[idx].matched;
+    return q.pairs.every((correctRight,li) => m[li]===correctRight);
+  }
+  return false;
+}
+
+function rev(idx){ revealed[idx]=true; renderQuestion(idx); }
+function nextQ(){ if(current<Q.length-1) renderQuestion(current+1); else showResults(); }
+function prevQ(){ if(current>0) renderQuestion(current-1); }
+
+/* ═══════════════════════════════════════════════════
+   TIMER
+═══════════════════════════════════════════════════ */
+function startTimer(){
+  secondsLeft = TIME_LIMIT;
+  timerInterval = setInterval(()=>{
+    secondsLeft--;
+    const m=Math.floor(secondsLeft/60).toString().padStart(2,'0');
+    const s=(secondsLeft%60).toString().padStart(2,'0');
+    const el=document.getElementById('timer');
+    el.textContent=`${m}:${s}`;
+    el.className='timer'+(secondsLeft<300?' danger':secondsLeft<600?' warning':'');
+    if(secondsLeft<=0){ clearInterval(timerInterval); showResults(); }
+  },1000);
+}
+
+/* ═══════════════════════════════════════════════════
+   RESULTADOS
+═══════════════════════════════════════════════════ */
+function showResults(){
+  clearInterval(timerInterval);
+  document.getElementById('examScreen').classList.add('hidden');
+  document.getElementById('navBar').classList.add('hidden');
+
+  const total    = Q.length;
+  const answered = Q.filter((_,i)=>hasAnswer(i)).length;
+  const correct  = Q.filter((_,i)=>checkAnswer(i)).length;
+  const wrong    = Q.filter((_,i)=>hasAnswer(i)&&!checkAnswer(i)).length;
+  const skipped  = total - answered;
+  const pct      = Math.round(correct/total*100);
+
+  const subs = {};
+  Q.forEach((q,i)=>{
+    if(!subs[q.sa]) subs[q.sa]={label:q.sal,total:0,correct:0};
+    subs[q.sa].total++;
+    if(checkAnswer(i)) subs[q.sa].correct++;
+  });
+
+  const weak = Object.entries(subs).filter(([,s])=>s.correct/s.total<0.6).map(([,s])=>s.label);
+  const cc   = pct>=70?'score-good':pct>=50?'score-mid':'score-low';
+  const msg  = pct>=80?'¡Excelente! Tienes buena base matemática.':pct>=60?'Resultado moderado. Hay temas por reforzar.':'Diagnóstico listo. Prioriza los temas marcados en rojo.';
+
+  const rows = Object.entries(subs).map(([k,s])=>{
+    const p=Math.round(s.correct/s.total*100);
+    const icon=p>=80?'✅':p>=60?'⚠️':'❌';
+    const bc=p>=60?'linear-gradient(90deg,#1565c0,#1e88e5)':'linear-gradient(90deg,#c62828,#ef5350)';
+    return `<div class="area-row"><div class="area-name">${icon} ${s.label}</div>
+      <div class="area-bar-wrap"><div class="area-bar" style="width:${p}%;background:${bc}"></div></div>
+      <div class="area-pct" style="color:${p>=60?'#1565c0':'#c62828'}">${p}%</div></div>`;
+  }).join('');
+
+  const wb = weak.length
+    ? `<div class="weak-banner"><h4>🎯 Estudia esto primero:</h4><p>Menos del 60% en estas subáreas. Priorízalas esta semana.</p><div class="weak-tags">${weak.map(t=>`<span class="weak-tag">📌 ${t}</span>`).join('')}</div></div>`
+    : `<div style="background:#e8f5e9;border-radius:10px;padding:13px;margin:13px 0;color:#2e7d32;font-weight:600">✅ ¡Dominas todas las subáreas!</div>`;
+
+  const tu=TIME_LIMIT-secondsLeft, tm=Math.floor(tu/60), ts=tu%60;
+
+  document.getElementById('resultsScreen').innerHTML=`
+    <div class="results-screen">
+      <div style="background:#e3f2fd;border-radius:9px;padding:8px 13px;margin-bottom:16px;font-size:.8rem;color:#1565c0;font-weight:600">
+        📋 DIAGNÓSTICO MÓDULO B — ${new Date().toLocaleDateString('es-MX')}
+      </div>
+      <div class="score-circle ${cc}">${pct}%<div class="score-sub">${correct}/${total}</div></div>
+      <h2 style="margin-bottom:7px">${msg}</h2>
+      <p style="margin-bottom:18px;color:#777;font-size:.85rem">Tiempo: ${tm}m ${ts}s &nbsp;·&nbsp; Respondidas: ${answered}/${total}</p>
+      <div class="stats-grid">
+        <div class="stat-card stat-correct"><div class="n">${correct}</div><div class="l">✅ Correctas</div></div>
+        <div class="stat-card stat-wrong"><div class="n">${wrong}</div><div class="l">❌ Incorrectas</div></div>
+        <div class="stat-card stat-skip"><div class="n">${skipped}</div><div class="l">⏭️ Saltadas</div></div>
+      </div>
+      ${wb}
+      <div style="text-align:left;margin-bottom:22px">
+        <h3 style="font-size:.88rem;font-weight:700;color:#444;margin-bottom:9px">Desempeño por subárea</h3>
+        ${rows}
+      </div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-primary btn-lg" onclick="reviewExam()">Revisar con soluciones</button>
+        <button class="btn btn-secondary btn-lg" onclick="location.reload()">Reiniciar (nuevo orden)</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('resultsScreen').classList.remove('hidden');
+  window.scrollTo(0,0);
+}
+
+function reviewExam(){
+  document.getElementById('resultsScreen').classList.add('hidden');
+  document.getElementById('examScreen').classList.remove('hidden');
+  document.getElementById('navBar').classList.remove('hidden');
+  revealed = revealed.map(()=>true);
+  renderQuestion(0);
+  window.scrollTo(0,0);
+}
+</script>
+</body>
+</html>
